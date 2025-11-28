@@ -1,44 +1,58 @@
+"use client";
+
 import { StatCard } from "@/components/StatCard";
 import { ActivityList } from "@/components/ActivityList";
-import { Users, MousePointerClick, DollarSign, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Zap, Home, Thermometer, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useEnergyData } from "@/hooks/useEnergyData";
+import { EnergyLineChart } from "@/components/charts/EnergyLineChart";
+import { HouseholdBarChart } from "@/components/charts/HouseholdBarChart";
 
-export default function Home() {
+export default function Dashboard() {
+  const { stats, loading } = useEnergyData();
+
+  if (loading || !stats) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">Energy Analytics</h2>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-500">Data Source: GG.csv</span>
+        </div>
+      </div>
+
       {/* Stats Row */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Users"
-          value="12,345"
+          title="Total Consumption"
+          value={`${stats.totalConsumption.toLocaleString()} kWh`}
+          icon={Zap}
+          description="Total energy used"
+        />
+        <StatCard
+          title="Avg Daily Usage"
+          value={`${stats.avgDailyConsumption} kWh`}
+          icon={Thermometer}
+          description="Per day average"
+        />
+        <StatCard
+          title="Total Households"
+          value={stats.totalHouseholds.toString()}
+          icon={Home}
+          description="Monitored homes"
+        />
+        <StatCard
+          title="AC Adoption"
+          value={`${stats.acAdoptionRate}%`}
           icon={Users}
-          trend="+12%"
-          trendUp={true}
-          description="from last month"
-        />
-        <StatCard
-          title="Active Sessions"
-          value="1,234"
-          icon={MousePointerClick}
-          trend="+4%"
-          trendUp={true}
-          description="from last hour"
-        />
-        <StatCard
-          title="Total Revenue"
-          value="$45,231.89"
-          icon={DollarSign}
-          trend="+20.1%"
-          trendUp={true}
-          description="from last month"
-        />
-        <StatCard
-          title="Conversion Rate"
-          value="3.2%"
-          icon={TrendingUp}
-          trend="-1.2%"
-          trendUp={false}
-          description="from last week"
+          description="Households with AC"
         />
       </div>
 
@@ -46,31 +60,30 @@ export default function Home() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Overview</CardTitle>
+            <CardTitle>Consumption Trend</CardTitle>
+            <CardDescription>Daily energy usage over time</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <div className="h-[300px] w-full bg-gray-50 rounded-lg flex items-center justify-center border border-dashed border-gray-200">
-              <p className="text-gray-400 text-sm">Chart Placeholder (Revenue over time)</p>
-            </div>
+            <EnergyLineChart data={stats.dailyTrend} />
           </CardContent>
         </Card>
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Recent Sales</CardTitle>
+            <CardTitle>Usage by Household Size</CardTitle>
+            <CardDescription>Average consumption per person count</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full bg-gray-50 rounded-lg flex items-center justify-center border border-dashed border-gray-200">
-              <p className="text-gray-400 text-sm">Chart Placeholder (Sales distribution)</p>
-            </div>
+            <HouseholdBarChart data={stats.householdSizeTrend} />
           </CardContent>
         </Card>
       </div>
 
-      {/* Activity Row */}
+      {/* Activity Row - Kept as placeholder/demo since CSV doesn't have activity logs */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="col-span-2">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>System Activity</CardTitle>
+            <CardDescription>Recent alerts and updates</CardDescription>
           </CardHeader>
           <CardContent>
             <ActivityList />
@@ -78,12 +91,18 @@ export default function Home() {
         </Card>
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle>Insights</CardTitle>
+            <CardDescription>AI-generated analysis</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="h-10 w-full bg-gray-100 rounded animate-pulse"></div>
-            <div className="h-10 w-full bg-gray-100 rounded animate-pulse"></div>
-            <div className="h-10 w-full bg-gray-100 rounded animate-pulse"></div>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+              <p className="text-sm text-blue-800 font-medium">Peak Usage Alert</p>
+              <p className="text-xs text-blue-600 mt-1">Energy consumption peaks on weekends. Consider optimizing schedule.</p>
+            </div>
+            <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+              <p className="text-sm text-green-800 font-medium">Efficiency Tip</p>
+              <p className="text-xs text-green-600 mt-1">Households with 3 members show optimal energy efficiency per capita.</p>
+            </div>
           </CardContent>
         </Card>
       </div>
