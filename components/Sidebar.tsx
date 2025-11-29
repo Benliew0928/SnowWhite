@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: MessageSquare, label: "AI Chat", href: "/chat" },
-  { icon: Zap, label: "Predict", href: "https://jimatwatt-ai.onrender.com/" },
+  { icon: Zap, label: "Predict", href: "/predict" },
 ];
 
 export function Sidebar() {
