@@ -54,7 +54,7 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
         setIsLoading(true);
 
         try {
-            let context = "You are an AI assistant for the SnowWhite Energy Analytics Dashboard. Your role is to analyze the energy data and help users understand their consumption patterns. \n\n";
+            let context = "You are an AI assistant for the Jimat AI. Your role is to analyze the energy data and help users understand their consumption patterns. \n\n";
             context += "CRITICAL INSTRUCTIONS:\n";
             context += "1. Answer questions ONLY related to the provided website data.\n";
             context += "2. You are ENCOURAGED to provide actionable improvement suggestions and energy-saving tips based on the data trends.\n";
@@ -105,6 +105,19 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
                     context += `Safe Threshold: ${predictionData.threshold} kWh\n`;
                     if (predictionData.prediction > predictionData.threshold) {
                         context += `ALERT: Usage is predicted to exceed the safe threshold.\n`;
+                    }
+                }
+                // Add Estimated Bill & Smart Advice
+                if (predictionData.bill) {
+                    context += `=== ESTIMATED BILL & ADVICE ===\n`;
+                    context += `Estimated Monthly Bill: RM ${predictionData.bill.toFixed(2)}\n`;
+                    context += `Estimated Monthly Usage: ${(predictionData.monthly_kwh || 0).toFixed(0)} kWh\n`;
+
+                    if (predictionData.suggestions && predictionData.suggestions.length > 0) {
+                        context += `Smart Suggestions:\n`;
+                        predictionData.suggestions.forEach(suggestion => {
+                            context += `- ${suggestion}\n`;
+                        });
                     }
                 }
                 context += `\n`;

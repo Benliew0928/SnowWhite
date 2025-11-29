@@ -29,6 +29,9 @@ interface PredictionResult {
     bill_impact?: number;
     consumption?: number;
     generation?: number;
+    bill?: number;
+    monthly_kwh?: number;
+    suggestions?: string[];
 }
 
 interface DashboardContextType {
