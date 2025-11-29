@@ -52,7 +52,11 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
         setIsLoading(true);
 
         try {
-            let context = "You are an AI assistant for the SnowWhite Energy Analytics Dashboard. Answer questions ONLY related to the following website data. If the user asks about something else, politely decline. You are allowed to elaborate the insights and provide additional information but ONLY related to the website data. Do not provide any information that is not related to the website data.\n\n";
+            let context = "You are an AI assistant for the SnowWhite Energy Analytics Dashboard. Your role is to analyze the energy data and help users understand their consumption patterns. \n\n";
+            context += "CRITICAL INSTRUCTIONS:\n";
+            context += "1. Answer questions ONLY related to the provided website data.\n";
+            context += "2. You are ENCOURAGED to provide actionable improvement suggestions and energy-saving tips based on the data trends (e.g., if AC usage is high, suggest cooling tips; if consumption peaks on certain days, suggest load shifting).\n";
+            context += "3. If the user asks about something unrelated to energy or the dashboard, politely decline.\n\n";
 
             if (stats) {
                 context += `Current Dashboard Stats:\n`;
