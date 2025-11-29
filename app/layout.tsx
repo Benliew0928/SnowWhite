@@ -4,13 +4,15 @@ import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { Navbar } from "@/components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LayoutProvider } from "@/contexts/LayoutContext";
 import { AuthGuard } from "@/components/AuthGuard";
+import { ChatWidget } from "@/components/ChatWidget";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Next.js Dashboard",
-  description: "A modern dashboard with AI chat",
+  title: "Jimat AI",
+  description: "A dashboard for household energy consumption",
 };
 
 export default function RootLayout({
@@ -23,17 +25,18 @@ export default function RootLayout({
       <body className={`${inter.className} bg-gray-50/50 min-h-screen`}>
         <AuthProvider>
           <AuthGuard>
-            <div className="flex min-h-screen">
-              {/* Sidebar is hidden on login page via CSS or conditional rendering if needed, 
-                  but AuthGuard handles redirection so it's fine to keep structure */}
-              <Sidebar />
-              <div className="flex flex-col min-h-screen ml-0 md:ml-64 transition-all duration-300 w-full">
+            <LayoutProvider>
+              <div className="min-h-screen">
                 <Navbar />
-                <main className="flex-1">
-                  {children}
-                </main>
+                <div className="flex pt-16">
+                  <Sidebar />
+                  <main className="flex-1 ml-0 md:ml-64 w-full">
+                    {children}
+                  </main>
+                  <ChatWidget />
+                </div>
               </div>
-            </div>
+            </LayoutProvider>
           </AuthGuard>
         </AuthProvider>
       </body>
