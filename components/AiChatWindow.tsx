@@ -2,11 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send, Bot, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
+import { generateContent } from "@/lib/gemini";
+import { useEnergyData } from "@/hooks/useEnergyData";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
     id: string;
@@ -30,41 +33,72 @@ const INITIAL_MESSAGES: Message[] = [
 export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
     const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
     const [inputValue, setInputValue] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const { stats } = useEnergyData();
 
-    const handleSendMessage = (e?: React.FormEvent) => {
+    const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!inputValue.trim()) return;
+        if (!inputValue.trim() || isLoading) return;
 
-        const newMessage: Message = {
+        const userMessage: Message = {
             id: Date.now().toString(),
             role: "user",
             content: inputValue,
         };
 
-        setMessages((prev) => [...prev, newMessage]);
+        setMessages((prev) => [...prev, userMessage]);
         setInputValue("");
+        setIsLoading(true);
 
-        // Simulate AI response
-        setTimeout(() => {
+        try {
+            let context = "You are an AI assistant for the SnowWhite Energy Analytics Dashboard. Answer questions ONLY related to the following website data. If the user asks about something else, politely decline. You are allowed to elaborate the insights and provide additional information but ONLY related to the website data. Do not provide any information that is not related to the website data.\n\n";
+
+            if (stats) {
+                context += `Current Dashboard Stats:\n`;
+                context += `- Total Consumption: ${stats.totalConsumption} kWh\n`;
+                context += `- Avg Daily Usage: ${stats.avgDailyConsumption} kWh\n`;
+                context += `- Total Households: ${stats.totalHouseholds}\n`;
+                context += `- AC Adoption Rate: ${stats.acAdoptionRate}%\n\n`;
+
+                context += `Consumption Trend (Last 7 days shown for brevity, full data available to system):\n`;
+                context += stats.dailyTrend.map(d => `${d.date}: ${d.consumption}kWh`).join(", ");
+                context += `\n\n`;
+
+                context += `Usage by Household Size:\n`;
+                context += stats.householdSizeTrend.map(d => `${d.size} people: ${d.consumption}kWh avg`).join(", ");
+                context += `\n\n`;
+            } else {
+                context += "The dashboard data is currently loading or unavailable.";
+            }
+
+            const text = await generateContent(userMessage.content, context);
+
             const aiResponse: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "ai",
-                content: "I'm just a demo UI, but I look pretty cool, right?",
+                content: text,
             };
             setMessages((prev) => [...prev, aiResponse]);
-        }, 1000);
+        } catch (error: any) {
+            console.error("Failed to generate content:", error);
+            const errorResponse: Message = {
+                id: (Date.now() + 1).toString(),
+                role: "ai",
+                content: error.message || "Sorry, I encountered an error. Please try again.",
+            };
+            setMessages((prev) => [...prev, errorResponse]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Auto-scroll to bottom
     useEffect(() => {
         if (scrollRef.current) {
-            const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
-            if (scrollContainer) {
-                scrollContainer.scrollTop = scrollContainer.scrollHeight;
-            }
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, [messages]);
+    }, [messages, isLoading]);
 
     return (
         <AnimatePresence>
@@ -96,7 +130,7 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
                     </div>
 
                     {/* Messages */}
-                    <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+                    <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
                         <div className="space-y-4">
                             {messages.map((message) => (
                                 <div
@@ -112,16 +146,33 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
                                     )}
                                     <div
                                         className={`max-w-[80%] p-3 rounded-2xl text-sm ${message.role === "user"
-                                                ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                : "bg-gray-100 text-gray-800 rounded-tl-none"
+                                            ? "bg-primary text-primary-foreground rounded-tr-none"
+                                            : "bg-gray-100 text-gray-800 rounded-tl-none prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-800 prose-pre:text-gray-100"
                                             }`}
                                     >
-                                        {message.content}
+                                        {message.role === "ai" ? (
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                {message.content}
+                                            </ReactMarkdown>
+                                        ) : (
+                                            message.content
+                                        )}
                                     </div>
                                 </div>
                             ))}
+                            {isLoading && (
+                                <div className="flex gap-3 flex-row">
+                                    <Avatar className="w-8 h-8 border border-gray-100">
+                                        <AvatarImage src="/bot-avatar.png" />
+                                        <AvatarFallback className="bg-primary/10 text-primary text-xs">AI</AvatarFallback>
+                                    </Avatar>
+                                    <div className="bg-gray-100 text-gray-800 rounded-tl-none p-3 rounded-2xl text-sm">
+                                        Typing...
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    </ScrollArea>
+                    </div>
 
                     {/* Input */}
                     <div className="p-4 border-t border-gray-100 bg-white">
@@ -131,8 +182,9 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
                                 onChange={(e) => setInputValue(e.target.value)}
                                 placeholder="Type a message..."
                                 className="flex-1 bg-gray-50 border-gray-200 focus-visible:ring-primary"
+                                disabled={isLoading}
                             />
-                            <Button type="submit" size="icon" disabled={!inputValue.trim()} className="shrink-0">
+                            <Button type="submit" size="icon" disabled={!inputValue.trim() || isLoading} className="shrink-0">
                                 <Send className="w-4 h-4" />
                             </Button>
                         </form>
