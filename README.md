@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jimat AI - Intelligent Energy Bill Analysis Dashboard
 
-## Getting Started
+Jimat AI is a modern, AI-powered dashboard designed to help households understand and optimize their energy consumption. By leveraging Google's Gemini 2.5 Flash model, it transforms static PDF electricity bills into interactive, actionable insights.
 
-First, run the development server:
+## 🌟 Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+-   **Smart Bill Analysis**: Simply upload your PDF electricity bill. The system uses advanced AI to extract and analyze key data points instantly.
+-   **Interactive Dashboard**: Visualize your energy usage with intuitive charts and metrics:
+    -   **6-Month Usage History**: Track trends over time.
+    -   **Cost Breakdown**: See exactly where your money goes (Generation Costs, Green Incentives, etc.).
+    -   **Daily & Monthly Averages**: Understand your consumption patterns.
+-   **AI Assistant**: A built-in context-aware chatbot that can answer specific questions about your bill (e.g., "Why is my bill higher this month?").
+-   **Secure & Private**: Support for both guest access and secure user authentication.
+-   **Responsive Design**: A beautiful, mobile-friendly interface built with Tailwind CSS 4.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+-   **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+-   **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+-   **AI Model**: [Google Gemini 2.5 Flash](https://deepmind.google/technologies/gemini/) via `@google/generative-ai`
+-   **Visualization**: [Recharts](https://recharts.org/) for data visualization
+-   **Icons**: [Lucide React](https://lucide.dev/)
+-   **PDF Parsing**: `pdf-parse` (server-side)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 Getting Started
 
-## Learn More
+Follow these steps to get the project running on your local machine.
 
-To learn more about Next.js, take a look at the following resources:
+### Prerequisites
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+-   Node.js (v18 or later)
+-   npm, yarn, pnpm, or bun
+-   A Google Gemini API Key (Get one [here](https://aistudio.google.com/app/apikey))
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Installation
 
-## Deploy on Vercel
+1.  **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd SnowWhite
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    yarn install
+    # or
+    pnpm install
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3.  **Set up environment variables:**
+    Create a `.env.local` file in the root directory and add your Gemini API key:
+    ```env
+    NEXT_PUBLIC_GEMINI_API_KEY=your_api_key_here
+    ```
+
+4.  **Run the development server:**
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    # or
+    pnpm dev
+    ```
+
+5.  **Open the application:**
+    Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 📂 Project Structure
+
+-   `app/`: Next.js App Router pages and layouts.
+    -   `page.tsx`: Login/Welcome page.
+    -   `dashboard/`: Main dashboard interface.
+    -   `api/analyze/`: API route for processing PDF uploads.
+-   `components/`: Reusable UI components (Sidebar, Navbar, FileUpload, Charts).
+-   `lib/`: Utility functions and Gemini AI configuration.
+-   `contexts/`: React contexts for state management (Auth, Dashboard data).
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License.
