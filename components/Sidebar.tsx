@@ -1,15 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, BarChart3, Users, Settings, PieChart, Bell, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Zap, Bell, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-  { icon: BarChart3, label: "Analytics", href: "#" },
-  { icon: Users, label: "Customers", href: "#" },
-  { icon: PieChart, label: "Reports", href: "#" },
-  { icon: Settings, label: "Settings", href: "#" },
+  { icon: MessageSquare, label: "AI Chat", href: "/chat" },
+  { icon: Zap, label: "Predict", href: "https://jimatwatt-ai.onrender.com/" },
 ];
 
 export function Sidebar() {
@@ -31,6 +29,8 @@ export function Sidebar() {
           <Link
             key={item.label}
             href={item.href}
+            target={item.href.startsWith("http") ? "_blank" : undefined}
+            rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
             className="flex items-center gap-3 px-4 py-3 text-gray-600 rounded-lg hover:bg-gray-50 hover:text-primary transition-colors group"
           >
             <item.icon className="w-5 h-5 group-hover:text-primary transition-colors" />

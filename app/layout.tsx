@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { Navbar } from "@/components/Navbar";
-import { ChatWidget } from "@/components/ChatWidget";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/AuthGuard";
 
@@ -34,7 +33,6 @@ export default function RootLayout({
                   {children}
                 </main>
               </div>
-              <ChatWidget />
             </div>
           </AuthGuard>
         </AuthProvider>

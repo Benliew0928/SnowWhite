@@ -6,7 +6,8 @@ import {
     signInWithPopup,
     signInAnonymously,
     signOut,
-    onAuthStateChanged
+    onAuthStateChanged,
+    updateProfile
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
@@ -16,6 +17,7 @@ interface AuthContextType {
     signInWithGoogle: () => Promise<void>;
     signInAsGuest: () => Promise<void>;
     logout: () => Promise<void>;
+    updateUserProfile: (name: string, photoURL: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
     signInWithGoogle: async () => { },
     signInAsGuest: async () => { },
     logout: async () => { },
+    updateUserProfile: async () => { },
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -58,7 +61,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signInAsGuest = async () => {
         if (!auth) return;
         try {
-            await signInAnonymously(auth);
+            const result = await signInAnonymously(auth);
+            // Generate random profile for guest
+            const randomId = Math.floor(Math.random() * 10000);
+            const randomName = `Guest #${randomId}`;
+            const randomAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${randomId}`;
+
+            await updateProfile(result.user, {
+                displayName: randomName,
+                photoURL: randomAvatar
+            });
+
+            // Force update local state
+            setUser({ ...result.user, displayName: randomName, photoURL: randomAvatar });
         } catch (error) {
             console.error("Error signing in anonymously", error);
             throw error;
@@ -75,8 +90,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const updateUserProfile = async (name: string, photoURL: string) => {
+        if (!auth || !auth.currentUser) return;
+        try {
+            await updateProfile(auth.currentUser, {
+                displayName: name,
+                photoURL: photoURL
+            });
+            // Force update local state to reflect changes immediately
+            setUser({ ...auth.currentUser, displayName: name, photoURL: photoURL });
+        } catch (error) {
+            console.error("Error updating profile", error);
+            throw error;
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInAsGuest, logout }}>
+        <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInAsGuest, logout, updateUserProfile }}>
             {children}
         </AuthContext.Provider>
     );
