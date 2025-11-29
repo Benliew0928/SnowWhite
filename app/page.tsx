@@ -17,27 +17,12 @@ import { Zap, TrendingUp, Battery, Leaf, Loader2, ArrowLeft } from 'lucide-react
 import { FileUpload } from '@/components/FileUpload';
 import { Button } from '@/components/ui/button';
 
-// Types for our dashboard data
-interface DashboardData {
-  usageHistory: { month: string; usage: number; cost: number }[];
-  billSummary: {
-    totalAmount: number;
-    billingPeriod: string;
-    dueDate: string;
-  };
-  metrics: {
-    averageUsage: number;
-    dailyUsage: number;
-    generationCost: number;
-    networkCharge: number;
-    capacityCharge: number;
-    greenIncentive: number;
-  };
-  costBreakdown: { name: string; value: number; color: string }[];
-}
+// Types moved to DashboardContext
+
+import { useDashboard } from '@/contexts/DashboardContext';
 
 export default function Dashboard() {
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const { dashboardData, setDashboardData } = useDashboard();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleFileSelect = async (file: File) => {
@@ -102,7 +87,7 @@ export default function Dashboard() {
     <div className="p-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Energy Dashboard</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Household Energy Dashboard</h2>
           <p className="text-gray-500">Billing Period: {billSummary.billingPeriod}</p>
         </div>
         <div className="text-left md:text-right">

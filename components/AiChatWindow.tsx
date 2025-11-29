@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { generateContent } from "@/lib/gemini";
 import { useEnergyData } from "@/hooks/useEnergyData";
+import { useDashboard } from "@/contexts/DashboardContext";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -35,7 +36,8 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
     const [inputValue, setInputValue] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const { stats } = useEnergyData();
+    const { dashboardData, predictionData } = useDashboard();
+    const { stats } = useEnergyData(); // Keep as fallback/supplementary
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -55,25 +57,66 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
             let context = "You are an AI assistant for the SnowWhite Energy Analytics Dashboard. Your role is to analyze the energy data and help users understand their consumption patterns. \n\n";
             context += "CRITICAL INSTRUCTIONS:\n";
             context += "1. Answer questions ONLY related to the provided website data.\n";
-            context += "2. You are ENCOURAGED to provide actionable improvement suggestions and energy-saving tips based on the data trends (e.g., if AC usage is high, suggest cooling tips; if consumption peaks on certain days, suggest load shifting).\n";
+            context += "2. You are ENCOURAGED to provide actionable improvement suggestions and energy-saving tips based on the data trends.\n";
             context += "3. If the user asks about something unrelated to energy or the dashboard, politely decline.\n\n";
+            context += "4. All currency values are in Malaysian Ringgit (RM).\n";
+            context += "5. FORMATTING: Use Markdown to make responses visually appealing. Use bullet points for lists, **bold** for key numbers, and separate sections with newlines. Avoid long paragraphs.\n\n";
 
-            if (stats) {
-                context += `Current Dashboard Stats:\n`;
+            if (dashboardData) {
+                context += `=== CURRENT BILL ANALYSIS ===\n`;
+                context += `Billing Period: ${dashboardData.billSummary.billingPeriod}\n`;
+                context += `Total Amount: RM ${dashboardData.billSummary.totalAmount.toFixed(2)}\n`;
+                context += `Due Date: ${dashboardData.billSummary.dueDate}\n`;
+
+                context += `\nMetrics:\n`;
+                context += `- Average Usage: ${dashboardData.metrics.averageUsage} kWh\n`;
+                context += `- Daily Usage: ${dashboardData.metrics.dailyUsage} kWh\n`;
+                context += `- Generation Cost: RM ${dashboardData.metrics.generationCost}/kWh\n`;
+
+                context += `\nCost Breakdown:\n`;
+                dashboardData.costBreakdown.forEach(item => {
+                    context += `- ${item.name}: RM ${Math.abs(item.value).toFixed(2)}\n`;
+                });
+
+                context += `\nUsage History (Last 6 Months):\n`;
+                dashboardData.usageHistory.forEach(item => {
+                    context += `- ${item.month}: ${item.usage} kWh (RM ${item.cost})\n`;
+                });
+                context += `\n`;
+            }
+
+            if (predictionData) {
+                context += `=== AI PREDICTION ===\n`;
+                if (predictionData.mode === 'solar') {
+                    context += `Mode: Solar Analysis\n`;
+                    context += `Predicted Consumption: ${predictionData.consumption} kWh\n`;
+                    context += `Solar Generation: ${predictionData.generation} kWh\n`;
+                    context += `Net Energy: ${predictionData.net_energy} kWh\n`;
+                    context += `Bill Impact: ${predictionData.net_energy && predictionData.net_energy > 0 ? "Profit" : "Cost"} of RM ${Math.abs(predictionData.bill_impact || 0).toFixed(2)}\n`;
+                    if (predictionData.net_energy && predictionData.net_energy > 0) {
+                        context += `Status: Eco-Friendly (Surplus Generation)\n`;
+                    } else {
+                        context += `Status: Energy Deficit\n`;
+                    }
+                } else {
+                    context += `Mode: Standard Prediction\n`;
+                    context += `Predicted Consumption: ${predictionData.prediction.toFixed(2)} kWh\n`;
+                    context += `Status: ${predictionData.status}\n`;
+                    context += `Safe Threshold: ${predictionData.threshold} kWh\n`;
+                    if (predictionData.prediction > predictionData.threshold) {
+                        context += `ALERT: Usage is predicted to exceed the safe threshold.\n`;
+                    }
+                }
+                context += `\n`;
+            }
+
+            if (!dashboardData && !predictionData && stats) {
+                context += `=== GENERAL HOUSEHOLD STATS (Fallback) ===\n`;
                 context += `- Total Consumption: ${stats.totalConsumption} kWh\n`;
                 context += `- Avg Daily Usage: ${stats.avgDailyConsumption} kWh\n`;
-                context += `- Total Households: ${stats.totalHouseholds}\n`;
                 context += `- AC Adoption Rate: ${stats.acAdoptionRate}%\n\n`;
-
-                context += `Consumption Trend (Last 7 days shown for brevity, full data available to system):\n`;
-                context += stats.dailyTrend.map(d => `${d.date}: ${d.consumption}kWh`).join(", ");
-                context += `\n\n`;
-
-                context += `Usage by Household Size:\n`;
-                context += stats.householdSizeTrend.map(d => `${d.size} people: ${d.consumption}kWh avg`).join(", ");
-                context += `\n\n`;
-            } else {
-                context += "The dashboard data is currently loading or unavailable.";
+            } else if (!dashboardData && !predictionData && !stats) {
+                context += "No specific dashboard data is currently loaded. Ask the user to upload a bill or run a prediction.\n";
             }
 
             const text = await generateContent(userMessage.content, context);
@@ -149,13 +192,27 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
                                         </Avatar>
                                     )}
                                     <div
-                                        className={`max-w-[80%] p-3 rounded-2xl text-sm ${message.role === "user"
+                                        className={`max-w-[85%] p-4 rounded-2xl text-sm shadow-sm ${message.role === "user"
                                             ? "bg-primary text-primary-foreground rounded-tr-none"
-                                            : "bg-gray-100 text-gray-800 rounded-tl-none prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-800 prose-pre:text-gray-100"
+                                            : "bg-white border border-gray-100 text-gray-800 rounded-tl-none"
                                             }`}
                                     >
                                         {message.role === "ai" ? (
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm]}
+                                                components={{
+                                                    h1: ({ node, ...props }) => <h1 className="text-lg font-bold mt-4 mb-2 text-primary" {...props} />,
+                                                    h2: ({ node, ...props }) => <h2 className="text-base font-bold mt-3 mb-2 text-gray-900" {...props} />,
+                                                    h3: ({ node, ...props }) => <h3 className="text-sm font-bold mt-2 mb-1 text-gray-800" {...props} />,
+                                                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
+                                                    ul: ({ node, ...props }) => <ul className="list-disc list-outside ml-4 mb-2 space-y-1" {...props} />,
+                                                    ol: ({ node, ...props }) => <ol className="list-decimal list-outside ml-4 mb-2 space-y-1" {...props} />,
+                                                    li: ({ node, ...props }) => <li className="pl-1" {...props} />,
+                                                    strong: ({ node, ...props }) => <span className="font-bold text-primary/90" {...props} />,
+                                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary/20 pl-3 italic my-2 text-gray-600" {...props} />,
+                                                    code: ({ node, ...props }) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-pink-600" {...props} />,
+                                                }}
+                                            >
                                                 {message.content}
                                             </ReactMarkdown>
                                         ) : (
@@ -170,8 +227,10 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
                                         <AvatarImage src="/bot-avatar.png" />
                                         <AvatarFallback className="bg-primary/10 text-primary text-xs">AI</AvatarFallback>
                                     </Avatar>
-                                    <div className="bg-gray-100 text-gray-800 rounded-tl-none p-3 rounded-2xl text-sm">
-                                        Typing...
+                                    <div className="bg-white border border-gray-100 text-gray-800 rounded-tl-none p-4 rounded-2xl text-sm shadow-sm flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                                        <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                                        <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
                                     </div>
                                 </div>
                             )}
