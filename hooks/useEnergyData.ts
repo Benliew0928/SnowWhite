@@ -27,35 +27,6 @@ export function useEnergyData() {
     const [stats, setStats] = useState<AggregatedStats | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetch("/GG.csv");
-                const reader = response.body?.getReader();
-                const result = await reader?.read();
-                const decoder = new TextDecoder("utf-8");
-                const csv = decoder.decode(result?.value);
-
-                Papa.parse(csv, {
-                    header: true,
-                    dynamicTyping: true,
-                    skipEmptyLines: true,
-                    complete: (results) => {
-                        const parsedData = results.data as EnergyData[];
-                        setData(parsedData);
-                        calculateStats(parsedData);
-                        setLoading(false);
-                    },
-                });
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, []);
-
     const calculateStats = (data: EnergyData[]) => {
         const totalConsumption = data.reduce((acc, curr) => acc + (curr.Energy_Consumption_kWh || 0), 0);
         const uniqueHouseholds = new Set(data.map((d) => d.Household_ID)).size;
@@ -91,6 +62,35 @@ export function useEnergyData() {
             householdSizeTrend,
         });
     };
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetch("/GG.csv");
+                const reader = response.body?.getReader();
+                const result = await reader?.read();
+                const decoder = new TextDecoder("utf-8");
+                const csv = decoder.decode(result?.value);
+
+                Papa.parse(csv, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        const parsedData = results.data as EnergyData[];
+                        setData(parsedData);
+                        calculateStats(parsedData);
+                        setLoading(false);
+                    },
+                });
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     return { data, stats, loading };
 }

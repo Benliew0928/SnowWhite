@@ -1,20 +1,18 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import {
-    User,
-    signInWithPopup,
-    signInAnonymously,
-    signOut,
-    onAuthStateChanged,
-    updateProfile
-} from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+
+// Mock User interface to match what the app expects
+export interface User {
+    uid: string;
+    displayName: string | null;
+    email: string | null;
+    photoURL: string | null;
+}
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    signInWithGoogle: () => Promise<void>;
     signInAsGuest: () => Promise<void>;
     logout: () => Promise<void>;
     updateUserProfile: (name: string, photoURL: string) => Promise<void>;
@@ -23,7 +21,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
     user: null,
     loading: true,
-    signInWithGoogle: async () => { },
     signInAsGuest: async () => { },
     logout: async () => { },
     updateUserProfile: async () => { },
@@ -34,79 +31,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!auth) {
-            console.error("Firebase auth is not initialized. Check your environment variables.");
-            setLoading(false);
-            return;
+        // Check for existing session
+        const storedUser = localStorage.getItem("guest_user");
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch (e) {
+                console.error("Failed to parse stored user", e);
+                localStorage.removeItem("guest_user");
+            }
         }
-
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
+        setLoading(false);
     }, []);
 
-    const signInWithGoogle = async () => {
-        if (!auth) return;
-        try {
-            await signInWithPopup(auth, googleProvider);
-        } catch (error) {
-            console.error("Error signing in with Google", error);
-            throw error;
-        }
-    };
-
     const signInAsGuest = async () => {
-        if (!auth) return;
-        try {
-            const result = await signInAnonymously(auth);
-            // Generate random profile for guest
-            const randomId = Math.floor(Math.random() * 10000);
-            const randomName = `Guest #${randomId}`;
-            const randomAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${randomId}`;
+        setLoading(true);
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-            await updateProfile(result.user, {
-                displayName: randomName,
-                photoURL: randomAvatar
-            });
+        const randomId = Math.floor(Math.random() * 10000);
+        const newUser: User = {
+            uid: `guest-${randomId}`,
+            displayName: `Guest #${randomId}`,
+            email: null,
+            photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${randomId}`
+        };
 
-            // Force update local state
-            setUser({ ...result.user, displayName: randomName, photoURL: randomAvatar });
-        } catch (error) {
-            console.error("Error signing in anonymously", error);
-            throw error;
-        }
+        setUser(newUser);
+        localStorage.setItem("guest_user", JSON.stringify(newUser));
+        setLoading(false);
     };
 
     const logout = async () => {
-        if (!auth) return;
-        try {
-            await signOut(auth);
-        } catch (error) {
-            console.error("Error signing out", error);
-            throw error;
-        }
+        setUser(null);
+        localStorage.removeItem("guest_user");
     };
 
     const updateUserProfile = async (name: string, photoURL: string) => {
-        if (!auth || !auth.currentUser) return;
-        try {
-            await updateProfile(auth.currentUser, {
-                displayName: name,
-                photoURL: photoURL
-            });
-            // Force update local state to reflect changes immediately
-            setUser({ ...auth.currentUser, displayName: name, photoURL: photoURL });
-        } catch (error) {
-            console.error("Error updating profile", error);
-            throw error;
-        }
+        if (!user) return;
+        const updatedUser = { ...user, displayName: name, photoURL: photoURL };
+        setUser(updatedUser);
+        localStorage.setItem("guest_user", JSON.stringify(updatedUser));
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInAsGuest, logout, updateUserProfile }}>
+        <AuthContext.Provider value={{ user, loading, signInAsGuest, logout, updateUserProfile }}>
             {children}
         </AuthContext.Provider>
     );

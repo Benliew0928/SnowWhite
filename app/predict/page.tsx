@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Zap, Leaf, CheckCircle, ArrowRight, Loader2, Sun, TrendingUp, Info, Battery, AlertTriangle } from "lucide-react";
+import { Zap, Leaf, CheckCircle, ArrowRight, Loader2, Sun, TrendingUp, Info, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
@@ -350,7 +350,7 @@ export default function PredictPage() {
                                     <div className="p-4 bg-gray-50 rounded-full">
                                         <TrendingUp className="w-8 h-8 opacity-20" />
                                     </div>
-                                    <p>Enter parameters and click "Calculate Forecast" <br /> to see AI predictions here.</p>
+                                    <p>Enter parameters and click &quot;Calculate Forecast&quot; <br /> to see AI predictions here.</p>
                                 </div>
                             )}
                         </CardContent>

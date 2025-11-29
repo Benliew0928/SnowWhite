@@ -23,19 +23,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-gray-50/50 min-h-screen`}>
+      <body className={`${inter.className} bg-gray-50/50 min-h-screen`} suppressHydrationWarning={true}>
         <AuthProvider>
           <AuthGuard>
             <LayoutProvider>
               <DashboardProvider>
                 <div className="min-h-screen">
-                  <Navbar />
-                  <div className="flex pt-16">
-                    <Sidebar />
-                    <main className="flex-1 ml-0 md:ml-64 w-full">
+                  <div className="print:hidden">
+                    <Navbar />
+                  </div>
+                  <div className="flex pt-16 print:pt-0">
+                    <div className="print:hidden">
+                      <Sidebar />
+                    </div>
+                    <main className="flex-1 ml-0 md:ml-64 print:ml-0 w-full">
                       {children}
                     </main>
-                    <ChatWidget />
+                    <div className="print:hidden">
+                      <ChatWidget />
+                    </div>
                   </div>
                 </div>
               </DashboardProvider>

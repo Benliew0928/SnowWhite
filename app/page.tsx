@@ -4,20 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { Chrome, User } from "lucide-react";
+import { User } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function LoginPage() {
-  const { user, signInWithGoogle, signInAsGuest, loading } = useAuth();
+  const { user, signInAsGuest, loading } = useAuth();
   const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     if (user && !loading) {
+      setIsRedirecting(true);
       router.push("/dashboard");
     }
   }, [user, loading, router]);
 
-  if (loading) return null;
+  if (loading || isRedirecting) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -27,26 +29,6 @@ export default function LoginPage() {
           <CardDescription>Sign in to access your dashboard</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            variant="outline"
-            className="w-full h-12 text-base"
-            onClick={signInWithGoogle}
-          >
-            <Chrome className="mr-2 h-5 w-5" />
-            Sign in with Google
-          </Button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
           <Button
             variant="secondary"
             className="w-full h-12 text-base"

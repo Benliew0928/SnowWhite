@@ -7,7 +7,6 @@ interface DashboardData {
     billSummary: {
         totalAmount: number;
         billingPeriod: string;
-        dueDate: string;
     };
     metrics: {
         averageUsage: number;

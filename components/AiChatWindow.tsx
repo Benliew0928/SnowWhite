@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send, Bot, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { generateContent } from "@/lib/gemini";
+import { chatWithGemini } from "@/app/actions/chat";
 import { useEnergyData } from "@/hooks/useEnergyData";
 import { useDashboard } from "@/contexts/DashboardContext";
 import ReactMarkdown from "react-markdown";
@@ -38,6 +39,20 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const { dashboardData, predictionData } = useDashboard();
     const { stats } = useEnergyData(); // Keep as fallback/supplementary
+    const pathname = usePathname();
+
+    const getPageContext = (path: string) => {
+        switch (path) {
+            case "/":
+                return "CURRENT PAGE: Home/Landing Page. The user is on the main introduction page of Jimat AI. They can navigate to Dashboard or Predict features.\n";
+            case "/dashboard":
+                return "CURRENT PAGE: Dashboard. The user is viewing their energy consumption overview, bill analysis, and historical usage charts.\n";
+            case "/predict":
+                return "CURRENT PAGE: Prediction. The user is using the AI forecasting tool to predict future usage and simulate solar panel savings.\n";
+            default:
+                return `CURRENT PAGE: ${path}. The user is browsing this specific section.\n`;
+        }
+    };
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -62,11 +77,15 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
             context += "4. All currency values are in Malaysian Ringgit (RM).\n";
             context += "5. FORMATTING: Use Markdown to make responses visually appealing. Use bullet points for lists, **bold** for key numbers, and separate sections with newlines. Avoid long paragraphs.\n\n";
 
+            // Inject Page Context
+            context += `=== CONTEXT ===\n`;
+            context += getPageContext(pathname);
+            context += `\n`;
+
             if (dashboardData) {
                 context += `=== CURRENT BILL ANALYSIS ===\n`;
                 context += `Billing Period: ${dashboardData.billSummary.billingPeriod}\n`;
                 context += `Total Amount: RM ${dashboardData.billSummary.totalAmount.toFixed(2)}\n`;
-                context += `Due Date: ${dashboardData.billSummary.dueDate}\n`;
 
                 context += `\nMetrics:\n`;
                 context += `- Average Usage: ${dashboardData.metrics.averageUsage} kWh\n`;
@@ -132,12 +151,16 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
                 context += "No specific dashboard data is currently loaded. Ask the user to upload a bill or run a prediction.\n";
             }
 
-            const text = await generateContent(userMessage.content, context);
+            const result = await chatWithGemini(userMessage.content, context);
+
+            if (!result.success) {
+                throw new Error(result.error);
+            }
 
             const aiResponse: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "ai",
-                content: text,
+                content: result.data || "I couldn't generate a response.",
             };
             setMessages((prev) => [...prev, aiResponse]);
         } catch (error: any) {
@@ -214,16 +237,16 @@ export function AiChatWindow({ isOpen, onClose }: AiChatWindowProps) {
                                             <ReactMarkdown
                                                 remarkPlugins={[remarkGfm]}
                                                 components={{
-                                                    h1: ({ node, ...props }) => <h1 className="text-lg font-bold mt-4 mb-2 text-primary" {...props} />,
-                                                    h2: ({ node, ...props }) => <h2 className="text-base font-bold mt-3 mb-2 text-gray-900" {...props} />,
-                                                    h3: ({ node, ...props }) => <h3 className="text-sm font-bold mt-2 mb-1 text-gray-800" {...props} />,
-                                                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
-                                                    ul: ({ node, ...props }) => <ul className="list-disc list-outside ml-4 mb-2 space-y-1" {...props} />,
-                                                    ol: ({ node, ...props }) => <ol className="list-decimal list-outside ml-4 mb-2 space-y-1" {...props} />,
-                                                    li: ({ node, ...props }) => <li className="pl-1" {...props} />,
-                                                    strong: ({ node, ...props }) => <span className="font-bold text-primary/90" {...props} />,
-                                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary/20 pl-3 italic my-2 text-gray-600" {...props} />,
-                                                    code: ({ node, ...props }) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-pink-600" {...props} />,
+                                                    h1: ({ ...props }) => <h1 className="text-lg font-bold mt-4 mb-2 text-primary" {...props} />,
+                                                    h2: ({ ...props }) => <h2 className="text-base font-bold mt-3 mb-2 text-gray-900" {...props} />,
+                                                    h3: ({ ...props }) => <h3 className="text-sm font-bold mt-2 mb-1 text-gray-800" {...props} />,
+                                                    p: ({ ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
+                                                    ul: ({ ...props }) => <ul className="list-disc list-outside ml-4 mb-2 space-y-1" {...props} />,
+                                                    ol: ({ ...props }) => <ol className="list-decimal list-outside ml-4 mb-2 space-y-1" {...props} />,
+                                                    li: ({ ...props }) => <li className="pl-1" {...props} />,
+                                                    strong: ({ ...props }) => <span className="font-bold text-primary/90" {...props} />,
+                                                    blockquote: ({ ...props }) => <blockquote className="border-l-4 border-primary/20 pl-3 italic my-2 text-gray-600" {...props} />,
+                                                    code: ({ ...props }) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-pink-600" {...props} />,
                                                 }}
                                             >
                                                 {message.content}

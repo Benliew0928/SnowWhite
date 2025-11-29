@@ -44,7 +44,7 @@ export function Navbar() {
                 <Link href="/profile" className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg transition-colors">
                     <div className="text-right hidden sm:block">
                         <p className="text-sm font-medium text-gray-900">{user?.displayName || "Guest User"}</p>
-                        <p className="text-xs text-gray-500">{user?.isAnonymous ? "Guest" : "Member"}</p>
+                        <p className="text-xs text-gray-500">Guest</p>
                     </div>
                     <Avatar>
                         <AvatarImage src={user?.photoURL || ""} />
